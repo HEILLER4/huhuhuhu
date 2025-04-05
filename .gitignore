@@ -1,0 +1,9 @@
+.venv/
+nanodet/
+logs/
+MiDaS/
+midas_env/
+nanodet_midas_env/
+yolov5/
+*.jpg
+*.pt
