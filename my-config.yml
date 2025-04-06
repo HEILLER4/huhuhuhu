@@ -1,0 +1,114 @@
+save_dir: workspace/nanodet_vehicle_cpu
+model:
+  weight_averager:
+    name: ExpMovingAverager
+    decay: 0.9998
+  arch:
+    name: NanoDetPlus
+    detach_epoch: 10
+    backbone:
+      name: ShuffleNetV2
+      model_size: 0.5x
+      out_stages: [2,3,4]
+      activation: LeakyReLU
+    fpn:
+      name: GhostPAN
+      in_channels: [48, 96, 192]
+      out_channels: 64
+      kernel_size: 5
+      num_extra_level: 1
+      use_depthwise: True
+      activation: LeakyReLU
+    head:
+      name: NanoDetPlusHead
+      num_classes: 1  # Must match your actual class count
+      input_channel: 64
+      feat_channels: 64
+      stacked_convs: 2
+      kernel_size: 5
+      strides: [8, 16, 32, 64]
+      activation: LeakyReLU
+      reg_max: 7
+      norm_cfg:
+        type: BN
+      loss:
+        loss_qfl:
+          name: QualityFocalLoss
+          use_sigmoid: True
+          beta: 2.0
+          loss_weight: 1.0
+        loss_dfl:
+          name: DistributionFocalLoss
+          loss_weight: 0.25
+        loss_bbox:
+          name: GIoULoss
+          loss_weight: 2.0
+    aux_head:
+      name: SimpleConvHead
+      num_classes: 80
+      input_channel: 192
+      feat_channels: 192
+      stacked_convs: 4
+      strides: [ 8, 16, 32, 64 ]
+      activation: LeakyReLU
+      reg_max: 7
+# Class names moved to root level with proper structure
+class_names: &class_names ["vehicle"]
+
+data:
+  train:
+    name: coco
+    img_path: C:/Users/lbert/PycharmProjects/libra/Vehicles-coco.v2i.coco/train/
+    ann_path: C:/Users/lbert/PycharmProjects/libra/Vehicles-coco.v2i.coco/train/_annotations.coco.json
+    input_size: [224, 224]
+    keep_ratio: True
+    pipeline:
+      perspective: 0.0
+      scale: [0.6, 1.4]
+      stretch: [[1, 1], [1, 1]]
+      rotation: 0
+      shear: 0
+      translate: 0.2
+      flip: 0.5
+      brightness: 0.2
+      contrast: [0.8, 1.2]
+      saturation: [0.8, 1.2]
+      normalize: [[103.53, 116.28, 123.675], [57.375, 57.12, 58.395]]
+  val:
+    name: coco
+    img_path: C:/Users/lbert/PycharmProjects/libra/Vehicles-coco.v2i.coco/valid/
+    ann_path: C:/Users/lbert/PycharmProjects/libra/Vehicles-coco.v2i.coco/valid/_annotations.coco.json
+    input_size: [224, 224]
+    keep_ratio: True
+    pipeline:
+      normalize: [[103.53, 116.28, 123.675], [57.375, 57.12, 58.395]]
+
+device:
+  gpu_ids: []  # Empty list forces CPU mode
+  workers_per_gpu: 2
+  batchsize_per_gpu: 8
+  precision: 32
+
+schedule:
+  optimizer:
+    name: SGD
+    lr: 0.005
+    momentum: 0.9
+    weight_decay: 5e-4
+  warmup:
+    name: linear
+    steps: 100
+    ratio: 0.0001
+  total_epochs: 30
+  lr_schedule:
+    name: MultiStepLR
+    milestones: [15, 25]
+    gamma: 0.1
+  val_intervals: 5
+
+evaluator:
+  name: CocoDetectionEvaluator
+  save_key: mAP
+
+log:
+  interval: 5
