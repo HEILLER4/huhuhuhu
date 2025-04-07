@@ -21,7 +21,7 @@ model:
       activation: LeakyReLU
     head:
       name: NanoDetPlusHead
-      num_classes: 1  # Must match your actual class count
+      num_classes: 5  # Must match your actual class count
       input_channel: 64
       feat_channels: 64
       stacked_convs: 2
@@ -45,15 +45,15 @@ model:
           loss_weight: 2.0
     aux_head:
       name: SimpleConvHead
-      num_classes: 80
-      input_channel: 192
-      feat_channels: 192
-      stacked_convs: 4
+      num_classes: 5
+      input_channel: 128
+      feat_channels: 128
+      stacked_convs: 2
       strides: [ 8, 16, 32, 64 ]
       activation: LeakyReLU
       reg_max: 7
 # Class names moved to root level with proper structure
-class_names: &class_names ["vehicle"]
+class_names: ["Vehicles","bus", "car", "motorcycle", "truck"]
 
 data:
   train:
@@ -84,7 +84,7 @@ data:
       normalize: [[103.53, 116.28, 123.675], [57.375, 57.12, 58.395]]
 
 device:
-  gpu_ids: []  # Empty list forces CPU mode
+  gpu_ids: -1  # Empty list forces CPU mode
   workers_per_gpu: 2
   batchsize_per_gpu: 8
   precision: 32
@@ -111,4 +111,4 @@ evaluator:
   save_key: mAP
 
 log:
-  interval: 5
+  interval: 10
